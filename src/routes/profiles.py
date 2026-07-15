@@ -33,11 +33,6 @@ async def create_user_profile(
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
         s3_storage_client: S3StorageClient = Depends(get_s3_storage_client),
 ):
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization header is missing",
-        )
     try:
         decoded_token = jwt_manager.decode_access_token(token)
     except TokenExpiredError:
@@ -47,7 +42,7 @@ async def create_user_profile(
         )
     except BaseSecurityError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Authorization header format. Expected 'Bearer <token>'",
         )
     result = await db.execute(
@@ -68,6 +63,11 @@ async def create_user_profile(
     )
     db_user = result.scalar_one_or_none()
     if not db_user or not db_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or not active.",
+        )
+    if not db_user_from_token or not db_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or not active.",
@@ -93,7 +93,6 @@ async def create_user_profile(
                 detail="Failed to upload avatar. Please try again later."
             )
 
-        await s3_storage_client.upload_file(file_name, file_data)
         user_profile = UserProfileModel(
             first_name=profile.first_name,
             last_name=profile.last_name,
