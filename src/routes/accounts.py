@@ -130,7 +130,7 @@ async def register_user(
         await db.commit()
         await db.refresh(new_user)
 
-        activate_link = f"{BASE_URL_ACCOUNTS}/accounts/activate?token={activation_token.token}"
+        activate_link = f"{BASE_URL_ACCOUNTS}/activate?token={activation_token.token}"
         email = new_user.email
         background_tasks.add_task(
             email_sender.send_activation_email,
@@ -314,8 +314,8 @@ async def request_password_reset_token(
     responses={
         400: {
             "description": (
-                    "Bad Request - The provided email or token is invalid, "
-                    "the token has expired, or the user account is not active."
+                "Bad Request - The provided email or token is invalid, "
+                "the token has expired, or the user account is not active."
             ),
             "content": {
                 "application/json": {

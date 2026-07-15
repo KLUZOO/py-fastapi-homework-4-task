@@ -15,7 +15,7 @@ from config import get_jwt_auth_manager, get_s3_storage_client
 from security.http import get_token
 from sqlalchemy.orm import joinedload
 
-from storages import S3StorageClient
+from storages import S3StorageInterface
 
 router = APIRouter()
 
@@ -31,7 +31,7 @@ async def create_user_profile(
         db: AsyncSession = Depends(get_db),
         token: str = Depends(get_token),
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
-        s3_storage_client: S3StorageClient = Depends(get_s3_storage_client),
+        s3_storage_client: S3StorageInterface = Depends(get_s3_storage_client),
 ):
     try:
         decoded_token = jwt_manager.decode_access_token(token)
@@ -67,7 +67,7 @@ async def create_user_profile(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or not active.",
         )
-    if not db_user_from_token or not db_user.is_active:
+    if db_user_from_token is None or not db_user_from_token or not db_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or not active.",
@@ -92,6 +92,7 @@ async def create_user_profile(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to upload avatar. Please try again later."
             )
+        file_url = s3_storage_client.get_file_url(file_name)
 
         user_profile = UserProfileModel(
             first_name=profile.first_name,
@@ -99,7 +100,7 @@ async def create_user_profile(
             gender=profile.gender,
             date_of_birth=profile.date_of_birth,
             info=profile.info,
-            avatar=file_name,
+            avatar=file_url,
             user_id=db_user.id
         )
         db.add(user_profile)
