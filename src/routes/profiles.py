@@ -92,7 +92,7 @@ async def create_user_profile(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to upload avatar. Please try again later."
             )
-        file_url = s3_storage_client.get_file_url(file_name)
+        file_url = await s3_storage_client.get_file_url(file_name)
 
         user_profile = UserProfileModel(
             first_name=profile.first_name,
