@@ -100,7 +100,7 @@ async def create_user_profile(
             gender=profile.gender,
             date_of_birth=profile.date_of_birth,
             info=profile.info,
-            avatar=file_url,
+            avatar=file_name,
             user_id=db_user.id
         )
         db.add(user_profile)
@@ -121,5 +121,5 @@ async def create_user_profile(
         "gender": user_profile.gender,
         "date_of_birth": user_profile.date_of_birth,
         "info": user_profile.info,
-        "avatar": user_profile.avatar,
+        "avatar": file_url,
     }
