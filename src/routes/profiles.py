@@ -1,4 +1,3 @@
-from sqlalchemy.testing.pickleable import User
 from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,10 +40,10 @@ async def create_user_profile(
         )
     try:
         decoded_token = jwt_manager.decode_access_token(token)
-    except TokenExpiredError as error:
+    except TokenExpiredError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(error),
+            detail="Token has expired.",
         )
     except BaseSecurityError:
         raise HTTPException(
@@ -88,14 +87,11 @@ async def create_user_profile(
 
         try:
             await s3_storage_client.upload_file(file_name, file_data)
-            file_url = await s3_storage_client.get_file_url(file_name)
         except S3FileUploadError:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to upload avatar. Please try again later."
             )
-
-        content_type = avatar.content_type
 
         await s3_storage_client.upload_file(file_name, file_data)
         user_profile = UserProfileModel(
